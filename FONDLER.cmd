@@ -34,6 +34,31 @@ setlocal EnableDelayedExpansion
 
 ::========================================================================================================================================
 
+:: =================== User Confirmation ===================
+echo This script will apply extensive system tweaks and remove bloatware.
+echo It is recommended to create a system restore point before continuing.
+choice /m "Do you want to continue?" /c YN /n
+if errorlevel 2 exit /b
+echo.
+echo Starting script... Press any key to continue.
+pause >nul
+
+:: =================== Create Restore Point ===================
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Checkpoint-Computer -Description 'Pre-Fondler Tweaks' -RestorePointType 'MODIFY_SETTINGS'" >nul 2>&1
+if %errorlevel%==0 (
+    echo System restore point created successfully.
+) else (
+    echo Could not create a restore point (may require System Protection enabled or may not be supported on this Windows edition.)
+    echo Continuing anyway...
+    timeout /t 2 >nul
+)
+
+:: =================== Windows Version Check for BBRv2 ===================
+for /f "tokens=4-5 delims=. " %%a in ('ver') do set WINVER=%%a.%%b
+set SKIP_BBRV2=0
+:: Windows 11 24H2 is version 10.0.26100 or higher
+for /f "tokens=2 delims==." %%v in ("%WINVER%") do if %%v GEQ 26100 set SKIP_BBRV2=1
+
 :: =================== User Prompts ===================
 cls
 echo Device class:
@@ -443,7 +468,7 @@ echo Finished disabling desktop peek on taskbar. >> "%LOGFILE%"
 echo Disabling Windows Chat on taskbar... >> "%LOGFILE%"
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /v "ChatIcon" /t REG_DWORD /d 3 /f 2>nul
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarMn" /t REG_DWORD /d 0 /f 2>nul
-reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Communications" /v "Capabilities" /t REG_DWORD /d 0 /f 2>nul
+reg add "HKLM\Software\Microsoft\CurrentVersion\Communications" /v "Capabilities" /t REG_DWORD /d 0 /f 2>nul
 echo Finished disabling Windows Chat on taskbar. >> "%LOGFILE%"
 
 :: Disable Copilot
